@@ -7,7 +7,6 @@ import { PickupPoint } from './entities/pickup-point.entity';
 import { ShipmentLocationHistory } from './entities/shipment-location-history.entity';
 import { Shipment } from './entities/shipment.entity';
 import { ShipmentLocation } from './entities/shipment-location.entity';
-import { Campaign } from '../campaigns/entities/campaign.entity';
 
 @Module({
   imports: [
