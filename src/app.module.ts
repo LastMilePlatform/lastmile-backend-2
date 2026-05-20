@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -6,6 +7,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { getTypeOrmConfig } from './config/database.config';
 import { validateEnv } from './config/env.validation';
+import { RequestSigningGuard } from './guards/request-signing.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuctionsModule } from './modules/auctions/auctions.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -32,6 +34,9 @@ import { ChatModule } from './modules/chat/chat.module';
     ChatModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: RequestSigningGuard },
+  ],
 })
 export class AppModule {}

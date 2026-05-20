@@ -8,6 +8,7 @@ type EnvConfig = {
   DB_NAME?: string;
   JWT_SECRET: string;
   GOOGLE_CLIENT_ID?: string;
+  REQUEST_SIGNING_SECRET?: string;
 };
 
 function getRequiredString(
@@ -90,6 +91,9 @@ export function validateEnv(config: Record<string, unknown>): EnvConfig {
       DB_NAME: getRequiredString(config, 'DB_NAME'),
       JWT_SECRET: getRequiredString(config, 'JWT_SECRET'),
       GOOGLE_CLIENT_ID: googleClientId,
+      REQUEST_SIGNING_SECRET: typeof config.REQUEST_SIGNING_SECRET === 'string'
+        ? config.REQUEST_SIGNING_SECRET
+        : undefined,
     };
   }
 
@@ -103,5 +107,8 @@ export function validateEnv(config: Record<string, unknown>): EnvConfig {
     DB_NAME: dbName,
     JWT_SECRET: getRequiredString(config, 'JWT_SECRET'),
     GOOGLE_CLIENT_ID: googleClientId,
+    REQUEST_SIGNING_SECRET: typeof config.REQUEST_SIGNING_SECRET === 'string'
+      ? config.REQUEST_SIGNING_SECRET
+      : undefined,
   };
 }
