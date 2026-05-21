@@ -14,6 +14,6 @@ export class AuthController {
 
   @Post('google')
   loginWithGoogle(@Body() dto: GoogleAuthDto) {
-    return this.authService.loginWithGoogle(dto.accessToken);
+    return this.authService.loginWithGoogle(dto.accessToken, dto.role);
   }
 }
