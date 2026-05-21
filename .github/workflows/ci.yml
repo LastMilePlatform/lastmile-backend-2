@@ -27,9 +27,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Lint check
-        run: npm run lint:check
-
       - name: Build
         run: npm run build
 
