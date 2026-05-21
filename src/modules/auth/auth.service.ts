@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { User, UserRole } from '../users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { TokenService } from './services/token.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 type GoogleUserInfo = {
   sub: string;
@@ -21,6 +22,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
     private readonly tokenService: TokenService,
+    private readonly metricsService: MetricsService,
   ) {}
 
   async login(dto: LoginDto) {
@@ -38,6 +40,8 @@ export class AuthService {
       userId: user.id,
       role: user.role,
     });
+
+    this.metricsService.sessionsStarted.inc();
 
     return {
       accessToken,
@@ -98,6 +102,8 @@ export class AuthService {
       userId: user.id,
       role: user.role,
     });
+
+    this.metricsService.sessionsStarted.inc();
 
     return {
       accessToken,

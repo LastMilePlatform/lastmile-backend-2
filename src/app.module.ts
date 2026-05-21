@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -14,6 +14,8 @@ import { ProductsModule } from './modules/products/products.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { MetricsModule } from './modules/metrics/metrics.module';
+import { HttpMetricsMiddleware } from './modules/metrics/http-metrics.middleware';
 
 @Module({
   imports: [
@@ -32,6 +34,7 @@ import { ChatModule } from './modules/chat/chat.module';
     LogisticsModule,
     NotificationsModule,
     ChatModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -39,4 +42,8 @@ import { ChatModule } from './modules/chat/chat.module';
     { provide: APP_GUARD, useClass: RequestSigningGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HttpMetricsMiddleware).forRoutes('*');
+  }
+}
