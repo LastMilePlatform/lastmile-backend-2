@@ -1,6 +1,6 @@
-import { createHmac } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 
-const TEST_SECRET = 'test-signing-secret'; // NOSONAR — not a real credential, unit tests only
+const TEST_SECRET = randomBytes(32).toString('hex');
 
 function makeReflector(skip = false) {
   return { getAllAndOverride: jest.fn().mockReturnValue(skip) };
