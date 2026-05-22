@@ -8,7 +8,7 @@ export class AppController {
 
   @Get()
   @SkipSigning()
-  getHealthCheck(): { status: 'ok'; service: 'lastmile-backend' } {
+  getHealthCheck(): { status: 'ok'; service: 'lastmile-backend'; hostname: string } {
     return this.appService.getHealthCheck();
   }
 }
