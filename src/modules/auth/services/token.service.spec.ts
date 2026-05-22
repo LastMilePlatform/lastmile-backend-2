@@ -3,7 +3,15 @@ import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TokenService } from './token.service';
 
-const makeService = (secret = 'test-secret') => {
+const TEST_SECRET = 'test-secret'; // NOSONAR — not a real credential, used only in unit tests
+
+const b64url = (data: object | Buffer) =>
+  (Buffer.isBuffer(data) ? data : Buffer.from(JSON.stringify(data))).toString('base64url');
+
+const hmacSig = (secret: string, message: string) =>
+  b64url(createHmac('sha256', secret).update(message).digest());
+
+const makeService = (secret = TEST_SECRET) => {
   const configService = {
     get: jest.fn().mockReturnValue(secret),
   } as unknown as ConfigService;
@@ -48,99 +56,33 @@ describe('TokenService', () => {
 
     it('throws when userId is not a valid integer', () => {
       const svc = makeService();
-      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-      const body = Buffer.from(
-        JSON.stringify({
-          sub: 'not-a-number',
-          role: 'donor',
-          exp: Math.floor(Date.now() / 1000) + 3600,
-        }),
-      )
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-      const sig = createHmac('sha256', 'test-secret')
-        .update(`${header}.${body}`)
-        .digest()
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-      expect(() => svc.verify(`${header}.${body}.${sig}`)).toThrow(
-        UnauthorizedException,
-      );
+      const header = b64url({ alg: 'HS256', typ: 'JWT' });
+      const body = b64url({ sub: 'not-a-number', role: 'donor', exp: Math.floor(Date.now() / 1000) + 3600 });
+      const sig = hmacSig(TEST_SECRET, `${header}.${body}`);
+      expect(() => svc.verify(`${header}.${body}.${sig}`)).toThrow(UnauthorizedException);
     });
 
     it('throws when token is expired', () => {
       const svc = makeService();
-      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-      const body = Buffer.from(
-        JSON.stringify({
-          sub: 1,
-          role: 'donor',
-          exp: Math.floor(Date.now() / 1000) - 1,
-        }),
-      )
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-      const sig = createHmac('sha256', 'test-secret')
-        .update(`${header}.${body}`)
-        .digest()
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-      expect(() => svc.verify(`${header}.${body}.${sig}`)).toThrow(
-        UnauthorizedException,
-      );
+      const header = b64url({ alg: 'HS256', typ: 'JWT' });
+      const body = b64url({ sub: 1, role: 'donor', exp: Math.floor(Date.now() / 1000) - 1 });
+      const sig = hmacSig(TEST_SECRET, `${header}.${body}`);
+      expect(() => svc.verify(`${header}.${body}.${sig}`)).toThrow(UnauthorizedException);
     });
 
     it('throws on invalid base64 payload', () => {
       const svc = makeService();
       const header = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
       const badBody = '!!!invalid!!!';
-      const sig = createHmac('sha256', 'test-secret')
-        .update(`${header}.${badBody}`)
-        .digest()
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-      expect(() => svc.verify(`${header}.${badBody}.${sig}`)).toThrow(
-        UnauthorizedException,
-      );
+      const sig = hmacSig(TEST_SECRET, `${header}.${badBody}`);
+      expect(() => svc.verify(`${header}.${badBody}.${sig}`)).toThrow(UnauthorizedException);
     });
 
     it('defaults role to donor when not a string', () => {
       const svc = makeService();
-      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-      const body = Buffer.from(JSON.stringify({ sub: 5, role: 123 }))
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-      const sig = createHmac('sha256', 'test-secret')
-        .update(`${header}.${body}`)
-        .digest()
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
+      const header = b64url({ alg: 'HS256', typ: 'JWT' });
+      const body = b64url({ sub: 5, role: 123 });
+      const sig = hmacSig(TEST_SECRET, `${header}.${body}`);
       const result = svc.verify(`${header}.${body}.${sig}`);
       expect(result.role).toBe('donor');
     });
