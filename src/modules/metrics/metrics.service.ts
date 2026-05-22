@@ -25,7 +25,7 @@ export class MetricsService {
 
   constructor() {
     this.registry = new Registry();
-    this.registry.setDefaultLabels({ app: 'lastmile-backend' });
+    this.registry.setDefaultLabels({ app: 'lastmile-backend-2' });
     collectDefaultMetrics({ register: this.registry });
 
     // Negocio
