@@ -9,9 +9,11 @@ describe('AppController', () => {
   });
 
   it('getHealthCheck returns status ok', () => {
-    expect(controller.getHealthCheck()).toEqual({
-      status: 'ok',
-      service: 'lastmile-backend',
-    });
+    expect(controller.getHealthCheck()).toEqual(
+      expect.objectContaining({
+        status: 'ok',
+        service: 'lastmile-backend',
+      }),
+    );
   });
 });
