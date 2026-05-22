@@ -103,7 +103,8 @@
     "coverageReporters": [
       "lcov",
       "text",
-      "clover"
+      "clover",
+      "html"
     ],
     "testEnvironment": "node"
   }
