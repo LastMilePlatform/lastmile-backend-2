@@ -35,17 +35,11 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:cov
 
-      - name: Verify coverage report
-        run: |
-          echo "Coverage file path: ${{ github.workspace }}/coverage/lcov.info"
-          ls -lh ${{ github.workspace }}/coverage/lcov.info
-          head -5 ${{ github.workspace }}/coverage/lcov.info
+      - name: Inject absolute coverage path into sonar-project.properties
+        run: echo "sonar.javascript.lcov.reportPaths=${GITHUB_WORKSPACE}/coverage/lcov.info" >> sonar-project.properties
 
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
-        with:
-          args: >
-            -Dsonar.javascript.lcov.reportPaths=${{ github.workspace }}/coverage/lcov.info
