@@ -9,12 +9,13 @@ const makeQb = (result: unknown) => ({
 
 describe('AuthService', () => {
   const mockTokenService = { generate: jest.fn().mockReturnValue('tok') };
+  const mockMetricsService = { sessionsStarted: { inc: jest.fn() } };
 
   const makeService = (qbResult: unknown) => {
     const repo = {
       createQueryBuilder: jest.fn().mockReturnValue(makeQb(qbResult)),
     };
-    return new AuthService(repo as any, mockTokenService as any);
+    return new AuthService(repo as any, mockTokenService as any, mockMetricsService as any);
   };
 
   beforeEach(() => jest.clearAllMocks());
