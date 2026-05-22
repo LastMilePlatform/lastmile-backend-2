@@ -74,10 +74,7 @@ export class TokenService {
 
   private parsePayload(encoded: string): Record<string, unknown> {
     try {
-      const decoded = Buffer.from(
-        this.base64UrlToBase64(encoded),
-        'base64',
-      ).toString('utf8');
+      const decoded = Buffer.from(encoded, 'base64url').toString('utf8');
       return JSON.parse(decoded) as Record<string, unknown>;
     } catch {
       throw new UnauthorizedException('Invalid token payload');
@@ -85,17 +82,7 @@ export class TokenService {
   }
 
   private base64UrlEncode(buffer: Buffer): string {
-    return buffer
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/g, '');
-  }
-
-  private base64UrlToBase64(input: string): string {
-    let output = input.replace(/-/g, '+').replace(/_/g, '/');
-    while (output.length % 4 !== 0) output += '=';
-    return output;
+    return buffer.toString('base64url');
   }
 
   private constantTimeEqual(a: string, b: string): boolean {
