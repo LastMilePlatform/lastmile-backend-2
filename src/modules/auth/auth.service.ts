@@ -7,11 +7,12 @@ import { Repository } from 'typeorm';
 import { User, UserRole } from '../users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { TokenService } from './services/token.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 type GoogleUserInfo = {
   sub: string;
   email: string;
-  email_verified: boolean;
+  email_verified: boolean | string;
   name?: string;
 };
 
@@ -21,6 +22,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
     private readonly tokenService: TokenService,
+    private readonly metricsService: MetricsService,
   ) {}
 
   async login(dto: LoginDto) {
@@ -39,6 +41,8 @@ export class AuthService {
       role: user.role,
     });
 
+    this.metricsService.sessionsStarted.inc();
+
     return {
       accessToken,
       user: {
@@ -49,18 +53,27 @@ export class AuthService {
     };
   }
 
-  async loginWithGoogle(googleAccessToken: string) {
-    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: `Bearer ${googleAccessToken}` },
-    });
-
-    if (!res.ok) {
-      throw new UnauthorizedException('Invalid Google access token');
+  private async verifyGoogleToken(token: string): Promise<GoogleUserInfo> {
+    const tokenInfoRes = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(token)}`,
+    );
+    if (tokenInfoRes.ok) {
+      return tokenInfoRes.json() as Promise<GoogleUserInfo>;
     }
 
-    const info = (await res.json()) as GoogleUserInfo;
+    const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!userInfoRes.ok) {
+      throw new UnauthorizedException('Invalid Google token');
+    }
+    return userInfoRes.json() as Promise<GoogleUserInfo>;
+  }
 
-    if (!info.email || !info.email_verified) {
+  async loginWithGoogle(googleAccessToken: string, role?: UserRole) {
+    const info = await this.verifyGoogleToken(googleAccessToken);
+
+    if (!info.email || !(info.email_verified === true || info.email_verified === 'true')) {
       throw new UnauthorizedException('Google account email not verified');
     }
 
@@ -69,11 +82,15 @@ export class AuthService {
     });
 
     if (!user) {
+      if (!role) {
+        return { requiresRoleSelection: true as const };
+      }
+
       user = this.usersRepository.create({
         name: info.name ?? info.email,
         email: info.email,
         googleId: info.sub,
-        role: UserRole.DONOR,
+        role,
       });
       await this.usersRepository.save(user);
     } else if (!user.googleId) {
@@ -85,6 +102,8 @@ export class AuthService {
       userId: user.id,
       role: user.role,
     });
+
+    this.metricsService.sessionsStarted.inc();
 
     return {
       accessToken,
